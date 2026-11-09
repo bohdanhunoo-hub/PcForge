@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PC FORGE</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#0a0e1a;--sf:#131a30;--tx:#eaf0ff;--mu:#8e9bbd;--ac:#00e5ff;--ok:#34d399;--er:#f87171;--bd:#26315a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1220;--sf:#182038;--tx:#eaf0ff;--mu:#93a0bf;--ac:#7c7dff;--ok:#34d399;--er:#f87171;--bd:#2a3556}}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
+#app{display:flex;height:100%}
+nav{overflow-y:auto;width:76px;background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;gap:4px;padding:6px;flex:none}
+nav button{border:0;background:none;color:var(--mu);padding:8px 2px;border-radius:10px;font-size:11px;cursor:pointer}
+nav button b{display:block;font-size:20px}
+nav button.on{background:var(--ac);color:#031018;box-shadow:0 0 12px #00e5ff66}button:active{transform:scale(.94)}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--sf);border-bottom:1px solid var(--bd);font-weight:600}
+#v{flex:1;overflow:auto;padding:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.card small{color:var(--mu)}
+.ic{font-size:30px}
+button.b{background:var(--ac);color:#031018;box-shadow:0 0 12px #00e5ff66;transition:transform .1s;border:0;border-radius:10px;padding:9px 12px;font-weight:600;cursor:pointer}
+button.b:disabled{opacity:.4}
+button.g{background:none;border:1px solid var(--bd);color:var(--tx);border-radius:10px;padding:7px 10px;cursor:pointer}
+button.g.on{border-color:var(--ac);color:var(--ac)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.hero{text-align:center;padding:20px 10px}
+.hero h1{font-size:34px;margin:0;letter-spacing:2px}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1}
+.slot{background:var(--sf);border:2px dashed var(--bd);border-radius:12px;padding:8px;text-align:center;cursor:pointer;min-height:84px}
+.slot.on{border-color:var(--ac)}
+.slot.full{border-style:solid}
+.split{display:flex;gap:12px;height:100%}
+.split>div{min-width:0;overflow:auto}
+.msg{padding:8px 10px;border-radius:10px;margin:6px 0;background:color-mix(in srgb,var(--er) 15%,transparent);color:var(--er)}
+.msg.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+#ov{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+#ov>div{background:var(--sf);border-radius:16px;padding:18px;max-width:440px;width:100%;max-height:90%;overflow:auto}
+.bar{height:10px;background:var(--bd);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ac);width:0;transition:width .5s}
+.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd)}
+@keyframes glow{50%{box-shadow:0 0 24px var(--ac)}}
+.rgb{animation:glow 1s infinite}.pop{animation:pop .45s}@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}}.hl{border-color:var(--ok)!important;box-shadow:0 0 16px var(--ok)}.dh{touch-action:none;cursor:grab;font-size:24px;padding:4px 8px;background:var(--bd);border-radius:8px}.ghost{position:fixed;z-index:20;pointer-events:none;background:var(--ac);color:#031018;padding:6px 10px;border-radius:10px;font-weight:700}input{background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:8px}
+@media (max-width:560px){.slots{grid-template-columns:repeat(2,1fr)}.split{flex-direction:column}}
+</style></head><body>
+<div id="app"><nav id="nav"></nav><main><header><span id="hd"></span><span id="mn"></span></header><div id="v"></div></main></div>
+<div id="ov"><div id="ob"></div></div>
+<script>
+const CAT={case:'Корпус',mb:'Материнская плата',cpu:'Процессор',ram:'Память',gpu:'Видеокарта',sto:'Накопитель',psu:'Блок питания',cool:'Охлаждение'};
+const IC={case:'🖥️',mb:'🟩',cpu:'🔲',ram:'📏',gpu:'🎮',sto:'💾',psu:'🔌',cool:'❄️'};
+const P=[
+['case','c1','Mini Box mATX',80,{ff:'mATX',gl:260}],
+['case','c2','Tower ATX Pro',150,{ff:'ATX',gl:340}],
+['case','c3','Full RGB ATX',260,{ff:'ATX',gl:400}],
+['cpu','p1','Intel Core i3-12100',110,{sock:'LGA1700',perf:25,tdp:60,ig:1}],
+['cpu','p2','AMD Ryzen 5 7600',230,{sock:'AM5',perf:55,tdp:65,ig:1}],
+['cpu','p3','Intel Core i7-13700K',420,{sock:'LGA1700',perf:80,tdp:125}],
+['cpu','p4','AMD Ryzen 9 7950X',650,{sock:'AM5',perf:100,tdp:170}],
+['mb','m1','B660M DDR4 (mATX)',90,{sock:'LGA1700',ram:'DDR4',ff:'mATX'}],
+['mb','m2','Z790 ATX DDR5',250,{sock:'LGA1700',ram:'DDR5',ff:'ATX'}],
+['mb','m3','B650 ATX DDR5',200,{sock:'AM5',ram:'DDR5',ff:'ATX'}],
+['ram','r1','DDR4 16 ГБ',45,{t:'DDR4',gb:16}],
+['ram','r2','DDR5 16 ГБ',80,{t:'DDR5',gb:16}],
+['ram','r3','DDR5 32 ГБ',150,{t:'DDR5',gb:32}],
+['gpu','g1','NVIDIA GTX 1650',130,{len:200,perf:25,tdp:75}],
+['gpu','g2','AMD RX 7600',260,{len:240,perf:50,tdp:165}],
+['gpu','g3','NVIDIA RTX 4070',560,{len:300,perf:80,tdp:200}],
+['gpu','g4','NVIDIA RTX 4090',1600,{len:350,perf:100,tdp:450}],
+['sto','s1','HDD 1 ТБ',30,{perf:1,gb:1000}],
+['sto','s2','SSD NVMe 500 ГБ',50,{perf:5,gb:500}],
+['sto','s3','SSD NVMe 2 ТБ',140,{perf:10,gb:2000}],
+['psu','u1','Блок питания 450 Вт',50,{w:450}],
+['psu','u2','Блок питания 650 Вт',90,{w:650}],
+['psu','u3','Блок питания 850 Вт',150,{w:850}],
+['psu','u4','Блок питания 1000 Вт',220,{w:1000}],
+['cool','k1','Боксовый кулер (Intel)',25,{max:65,socks:'LGA1700',typ:'Воздух'}],
+['cool','k2','Башня 120 мм',60,{max:150,socks:'LGA1700 AM5',typ:'Воздух'}],
+['cool','k3','СЖО 240 мм',130,{max:220,socks:'LGA1700 AM5',typ:'Жидкость',liq:1}]
+].map(a=>({c:a[0],id:a[1],n:a[2],p:a[3],s:a[4]}));
+const B=Object.fromEntries(P.map(x=>[x.id,x]));
+const ORD=[
+['Офисный ПК','Производительность ≥ 25, стоимость сборки ≤ 500',r=>r.perf>=25&&r.cost<=500,350],
+['Бюджетный ПК','Стоимость сборки ≤ 400, стабильность ≥ 80',r=>r.cost<=400&&r.stab>=80,300],
+['Игровой ПК','FPS ≥ 90, температура ≤ 80 °C',r=>r.fps>=90&&r.temp<=80,1100],
+['Рабочая станция','Производительность ≥ 85, ОЗУ ≥ 32 ГБ',r=>r.perf>=85&&r.gb>=32,2500],
+['Тихий офис','Температура ≤ 50 °C, производительность ≥ 20',r=>r.temp<=50&&r.perf>=20,500],
+['Мощный игровой ПК','FPS ≥ 130, температура ≤ 85 °C, стабильность ≥ 90',r=>r.fps>=130&&r.temp<=85&&r.stab>=90,2200]
+];
+let S={money:700,xp:0,owned:{},build:{},done:[],paste:0,cab:[],closed:0,nick:'',co:'',av:'',rep:0,wl:1,staff:0,ach:[],day:'',st:{built:0,earned:0,bought:0,bestfps:0},set:{snd:1,vol:.5,vib:1}};
+for(const k of ['pcf','pcf_bak']){try{const d=JSON.parse(localStorage.getItem(k)||'null');if(d&&typeof d=='object'){Object.assign(S,d);break}}catch(e){}}
+const save=()=>{if(window.RST)return;try{const j=JSON.stringify(S);localStorage.setItem('pcf_bak',localStorage.getItem('pcf')||j);localStorage.setItem('pcf',j)}catch(e){}};
+let scr='menu',cat='cpu',sort=0,sel='case',last=null;
+const lvl=()=>Math.min(100,1+Math.floor(S.xp/200));const LV={p3:2,k3:2,g3:3,c3:3,p4:4,g4:5};let q='',popk='';
+const g=k=>S.build[k]&&B[S.build[k]].s;
+function why(k,id){
+ const x=B[id].s,C=g('case'),M=g('mb'),U=g('cpu'),R=g('ram'),G=g('gpu'),K=g('cool'),b=S.build;
+ if(k!='case'&&!b.case)return 'Сначала выберите корпус.';
+ if(['cpu','ram','gpu','sto','cool'].includes(k)&&!b.mb)return 'Сначала установите материнскую плату.';
+ if(k=='cool'&&!b.cpu)return 'Сначала установите процессор.';
+ if(k=='cool'&&!S.paste)return 'Сначала нанесите термопасту на процессор.';
+ if(k=='case'){
+  if(M&&M.ff=='ATX'&&x.ff=='mATX')return 'Плата формата ATX не поместится в корпус mATX.';
+  if(G&&G.len>x.gl)return `Видеокарта длиной ${G.len} мм не влезет: максимум ${x.gl} мм.`;
+  if(K&&K.liq&&x.ff!='ATX')return 'Радиатор СЖО не помещается в маленький корпус.';
+ }
+ if(k=='mb'){
+  if(C&&C.ff=='mATX'&&x.ff=='ATX')return 'Плата ATX не подходит к корпусу mATX.';
+  if(U&&U.sock!=x.sock)return `Сокет платы ${x.sock}, а у процессора ${U.sock}.`;
+  if(R&&R.t!=x.ram)return `Плата поддерживает ${x.ram}, а установлена ${R.t}.`;
+ }
+ if(k=='cpu'){
+  if(M&&M.sock!=x.sock)return `Сокет процессора ${x.sock}, а у платы ${M.sock}.`;
+  if(K&&(!K.socks.includes(x.sock)||K.max<x.tdp))return 'Текущий кулер не подходит к этому процессору.';
+ }
+ if(k=='ram'&&M&&M.ram!=x.t)return `Плата работает с ${M.ram}, а это ${x.t}.`;
+ if(k=='gpu'&&C&&x.len>C.gl)return `Видеокарта (${x.len} мм) не помещается в корпус (макс. ${C.gl} мм).`;
+ if(k=='cool'){
+  if(U&&!x.socks.includes(U.sock))return `Крепление кулера не подходит к сокету ${U.sock}.`;
+  if(U&&x.max<U.tdp)return `Кулер рассчитан на ${x.max} Вт, процессор выделяет ${U.tdp} Вт.`;
+  if(C&&x.liq&&C.ff!='ATX')return 'СЖО не помещается в корпус mATX.';
+ }
+ return null;
+}
+function calc(){
+ const U=g('cpu'),G=g('gpu'),R=g('ram'),T=g('sto'),P_=g('psu'),K=g('cool');
+ const gp=G?G.perf:(U.ig?8:0),gt=G?G.tdp:15;
+ const draw=Math.round((U.tdp+gt)*1.3+60),
+ perf=Math.min(100,Math.round(U.perf*.5+gp*.4+R.gb/32*5+T.perf)),
+ temp=Math.round(32+U.tdp/K.max*38+gt/12),
+ stab=Math.max(0,Math.min(100,Math.round(100-Math.max(0,draw-P_.w*.8)*.5-Math.max(0,temp-80)*2))),
+ fps=Math.round((gp*.7+U.perf*.3)*1.4+10),
+ cost=Object.values(S.build).reduce((a,i)=>a+B[i].p,0);
+ return{perf,temp,draw,stab,fps,cost,gb:R.gb,psuLow:draw>P_.w};
+}
+const sleep=t=>new Promise(r=>setTimeout(r,t));
+function modal(h){const o=document.getElementById('ov');if(!h){o.style.display='none';return}document.getElementById('ob').innerHTML=h;o.style.display='flex'}
+function nav(){
+ const it=[['menu','🏠','Меню'],['build','🛠️','Сборка'],['shop','🛒','Магазин'],['orders','📋','Заказы'],['inv','🎒','Склад'],['co','🏢','Компания']];
+ document.getElementById('nav').innerHTML=it.map(a=>`<button class="${scr==a[0]?'on':''}" onclick="go('${a[0]}')"><b>${a[1]}</b>${a[2]}</button>`).join('');
+ document.getElementById('hd').textContent=(S.av||'🖥️')+' '+(S.nick||'')+' · '+(S.co||'PC FORGE')+' · ур. '+lvl()+' · реп. '+S.rep;
+ document.getElementById('mn').textContent='💰 '+S.money+' ₽';
+}
+function go(s){scr=s;draw()}
+function draw(){chk();nav();save();const v=document.getElementById('v');if(!S.nick){v.innerHTML=vOnb();return}v.innerHTML=({co:vCo,menu:vMenu,shop:vShop,build:vBuild,orders:vOrders,inv:vInv})[scr]()}
+function vMenu(){return `<div class="hero"><div class="ic">🖥️🔧</div><h1>PC FORGE</h1><p style="color:var(--mu)">Купите детали, соберите ПК и сдайте заказ клиенту.<br>Игра сохраняется автоматически (гостевой режим).</p>
+<div class="row" style="justify-content:center"><button class="b" onclick="go('build')">Играть</button><button class="g" onclick="go('shop')">Магазин</button><button class="g" onclick="go('orders')">Заказы</button></div>
+${S.day==new Date().toDateString()?'':`<button class='b' onclick='daily()'>🎁 Ежедневная награда</button><br><br>`}<small style="color:var(--mu)">Опыт: ${S.xp} · выполнено заказов: ${S.done.length}</small><br><br><button class="g" onclick="if(confirm('Сбросить прогресс?')){resetAll()}">Сбросить прогресс</button></div>`}
+function vShop(){
+ let l=P.filter(x=>q?x.n.toLowerCase().includes(q):x.c==cat).sort((a,b)=>sort?b.p-a.p:a.p-b.p);
+ const spec=s=>Object.entries(s).map(([k,v])=>`${k}: ${v}`).join(' · ');
+ return `<div class="row">${Object.keys(CAT).map(k=>`<button class="g ${k==cat?'on':''}" onclick="cat='${k}';q='';draw()">${CAT[k]}</button>`).join('')}<button class="g" onclick="sort=1-sort;draw()">Цена ${sort?'↓':'↑'}</button><input placeholder='🔍 Поиск' value='${q}' onchange="q=this.value.trim().toLowerCase();draw()"></div>
+ <div class="grid">${l.map(x=>`<div class="card"><div class="ic">${IC[x.c]}</div><b>${x.n}</b><small>${spec(x.s)}</small><span>${x.p} ₽ · в наличии: ${S.owned[x.id]||0}</span><button class='b' ${S.money<x.p||lvl()<(LV[x.id]||1)?'disabled':''} onclick="buy('${x.id}')">${lvl()<(LV[x.id]||1)?'🔒 Уровень '+LV[x.id]:'Купить'}</button></div>`).join('')}</div>`}
+function buy(id){if(S.money>=B[id].p){S.money-=B[id].p;S.owned[id]=(S.owned[id]||0)+1;S.st.bought++;snd(700);draw()}}
+let note='';
+function vBuild(){
+ const slots=Object.keys(CAT);
+ const opts=P.filter(x=>x.c==sel&&S.owned[x.id]>0);
+ return `<div class="split"><div style="flex:3"><div class="slots">${slots.map(k=>{const id=S.build[k];return `<div data-s='${k}' class="slot ${id?'full':''} ${k==sel?'on':''} ${k==popk?'pop':''}" onclick="sel='${k}';note='';draw()"><div class="ic">${IC[k]}</div><small>${CAT[k]}</small><br><b>${id?B[id].n:'пусто'}</b></div>`}).join('')}</div>
+ <div style='margin-top:10px'><small style='color:var(--mu)'>Перетащите деталь (✋) на подсвеченный слот. Порядок: корпус → плата → процессор → паста → охлаждение → остальное → кабели → закрыть корпус.</small></div>${steps()}<div class="row" style="margin-top:10px"><button class="b" onclick="launch()">⚡ Запустить ПК</button><button class="g" onclick="S.build={};S.paste=0;S.cab=[];S.closed=0;draw()">Очистить</button></div></div>
+ <div style="flex:2"><b>${CAT[sel]}</b> — ваши детали:${note?`<div class="msg">${note}</div>`:''}
+ ${opts.length?opts.map(x=>`<div class="card" style="margin:6px 0"><b><span class='dh' data-id='${x.id}' onpointerdown='drag(event)'>✋</span> ${x.n}</b><small>${Object.entries(x.s).map(([k,v])=>k+': '+v).join(' · ')}</small><button class="${S.build[sel]==x.id?'g':'b'}" onclick="inst('${x.id}')">${S.build[sel]==x.id?'Снять':'Установить'}</button></div>`).join(''):'<p style="color:var(--mu)">Нет деталей этого типа. Купите их в магазине.</p>'}</div></div>`}
+function inst(id,f){
+ if(S.build[sel]==id){if(f)return;const e=unseat(sel);note=e||'';draw();return}
+ const w=why(sel,id);if(w){note='❌ '+w;draw();return}
+ if(S.build[sel])unseat(sel,1);S.build[sel]=id;S.closed=0;popk=sel;note='';snd(300,.15);if(S.set.vib&&navigator.vibrate)navigator.vibrate(20);draw()}
+function unseat(k,r){const b=S.build;
+ if(!r){if(k=='case'&&b.mb)return '❌ Сначала снимите материнскую плату.';if(k=='mb'&&['cpu','ram','gpu','sto','cool'].some(z=>b[z]))return '❌ Сначала снимите детали с платы.';if(k=='cpu'&&b.cool)return '❌ Сначала снимите охлаждение.'}
+ if(k=='cpu'){S.paste=0;S.cab=S.cab.filter(x=>x!='c')}if(k=='gpu')S.cab=S.cab.filter(x=>x!='p');if(k=='mb'||k=='psu')S.cab=[];S.closed=0;if(!r)delete b[k]}
+function steps(){const b=S.build,cb=[['a','24-pin на плату',b.mb&&b.psu],['c','CPU 8-pin',b.mb&&b.psu&&b.cpu]];if(b.gpu)cb.push(['p','PCIe на видеокарту',b.psu&&b.gpu]);
+ return `<div class='row'><button class='g' ${b.cpu&&!S.paste?'':'disabled'} onclick='S.paste=1;popk="cpu";draw()'>🧴 ${S.paste?'Паста нанесена ✓':'Нанести термопасту'}</button>`+cb.map(c=>`<button class='g' ${c[2]&&!S.cab.includes(c[0])?'':'disabled'} onclick="S.cab.push('${c[0]}');draw()">🔌 ${S.cab.includes(c[0])?'✓ ':''}${c[1]}</button>`).join('')+`<button class='g' ${S.closed?'disabled':''} onclick='closeCase()'>🔒 ${S.closed?'Корпус закрыт ✓':'Закрыть корпус'}</button></div>`}
+function cabOk(){return ['a','c'].concat(S.build.gpu?['p']:[]).every(c=>S.cab.includes(c))}
+function closeCase(){if(!S.build.case||!cabOk())note='❌ Сначала установите детали и подключите все кабели.';else{S.closed=1;note=''}draw()}
+function drag(e){const t=e.target,id=t.dataset.id,x=B[id];t.setPointerCapture(e.pointerId);
+ const gh=document.createElement('div');gh.className='ghost';gh.textContent=IC[x.c]+' '+x.n;document.body.appendChild(gh);
+ const ss=document.querySelector('[data-s='+x.c+']');if(ss)ss.classList.add('hl');
+ const mv=ev=>{gh.style.left=ev.clientX+10+'px';gh.style.top=ev.clientY-50+'px'};mv(e);
+ const end=ev=>{t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',end);t.removeEventListener('pointercancel',end);gh.remove();if(ss)ss.classList.remove('hl');
+  const el=document.elementFromPoint(ev.clientX,ev.clientY),s=el&&el.closest('[data-s]');
+  if(s&&s.dataset.s==x.c){sel=x.c;inst(id,1)}else if(s&&ev.type=='pointerup'){note='❌ Эта деталь ставится в слот «'+CAT[x.c]+'».';draw()}};
+ t.addEventListener('pointermove',mv);t.addEventListener('pointerup',end);t.addEventListener('pointercancel',end)}
+async function launch(){
+ const miss=Object.keys(CAT).filter(k=>k!='gpu'&&!S.build[k]);
+ if(miss.length)return modal(`<b>Сборка неполная</b><div class="msg">Не хватает: ${miss.map(k=>CAT[k]).join(', ')}.</div><button class="b" onclick="modal()">Ок</button>`);
+ if(!S.paste||!cabOk()||!S.closed)return modal(`<b>Сборка не завершена</b><div class='msg'>Нужно: нанести термопасту, подключить все кабели и закрыть корпус.</div><button class='b' onclick='modal()'>Ок</button>`);
+ if(!S.build.gpu&&!g('cpu').ig)return modal(`<b>Нет изображения</b><div class="msg">У этого процессора нет встроенной графики — установите видеокарту.</div><button class="b" onclick="modal()">Ок</button>`);
+ const r=calc();
+ if(r.psuLow)return modal(`<b>Недостаточно мощности</b><div class="msg">Сборка потребляет ~${r.draw} Вт, а блок питания даёт ${g('psu').w} Вт. Нужен БП мощнее.</div><button class="b" onclick="modal()">Ок</button>`);
+ const steps=['Включение питания…','Подсветка RGB…','Загрузка BIOS…','Проверка комплектующих…','Игровой тест…'];
+ modal(`<div class="rgb" style="border-radius:12px;padding:14px"><b>Запуск ПК</b><p id="st"></p><div class="bar"><i id="pr"></i></div></div>`);
+ for(let i=0;i<steps.length;i++){document.getElementById('st').textContent=steps[i];document.getElementById('pr').style.width=((i+1)*20)+'%';await sleep(550)}
+ last=r;S.st.bestfps=Math.max(S.st.bestfps,r.fps);
+ const ok=ORD.map((o,i)=>({o,i,ok:o[2](r)&&!S.done.includes(i)})).filter(x=>x.ok);
+ modal(`<b>Результат сборки</b>
+ ${[['Производительность',r.perf+'/100'],['Температура',r.temp+' °C'],['Энергопотребление',r.draw+' Вт'],['Стабильность',r.stab+'%'],['FPS в играх',r.fps],['Стоимость деталей',r.cost+' ₽']].map(a=>`<div class="stat"><span>${a[0]}</span><b>${a[1]}</b></div>`).join('')}
+ <div class="row" style="margin-top:12px"><button class="g" onclick="sellPC(0.8)">Продать за ${Math.round(r.cost*.8)} ₽</button><button class="b" onclick="modal()">Закрыть</button></div>
+ ${ok.length?`<p>Подходит под заказы:</p>`+ok.map(x=>`<button class="b" style="margin:3px" onclick="deliver(${x.i})">Сдать: ${x.o[0]} (+${x.o[3]} ₽)</button>`).join(''):'<small style="color:var(--mu)">Под открытые заказы не подходит.</small>'}`);
+}
+function consume(){for(const id of Object.values(S.build))S.owned[id]--;S.build={};S.paste=0;S.cab=[];S.closed=0}
+function sellPC(k){const m=Math.round(last.cost*k);S.money+=m;S.st.earned+=m;S.st.built++;S.xp+=20;snd(900);consume();modal();draw()}
+function deliver(i){const r=Math.round(ORD[i][3]*(1+Math.min(.5,S.rep/400)));S.money+=r;S.st.earned+=r;S.st.built++;S.rep+=10;S.xp+=100;S.done.push(i);snd(900);consume();modal();draw()}
+function vOrders(){return `<div class="grid">${ORD.map((o,i)=>`<div class="card"><b>${o[0]}</b><small>${o[1]}</small><span>Награда: ${o[3]} ₽ + 100 опыта</span>${S.done.includes(i)?'<span class="msg ok">Выполнено ✓</span>':'<small>Соберите ПК и запустите — заказ можно будет сдать.</small>'}</div>`).join('')}</div>`}
+function vInv(){const l=P.filter(x=>S.owned[x.id]>0);
+ return l.length?`<div class='grid'>${l.map(x=>`<div class='card'><div class='ic'>${IC[x.c]}</div><b>${x.n}</b><small>В наличии: ${S.owned[x.id]}</small><button class='g' onclick="sellPart('${x.id}')">Продать за ${Math.round(x.p*.7)} ₽</button></div>`).join('')}</div>`:'<p style="color:var(--mu)">Склад пуст. Купите детали в магазине.</p>'}
+function sellPart(id){const u=Object.values(S.build).includes(id)?1:0;if(S.owned[id]-u<1){alert('Деталь установлена в сборку — сначала снимите её.');return}S.owned[id]--;S.money+=Math.round(B[id].p*.7);draw()}
+let A,ct='w',ob={av:'😎'};
+function snd(f,d=.08){if(!S.set.snd)return;try{A=A||new AudioContext();const o=A.createOscillator(),g=A.createGain();o.frequency.value=f;g.gain.value=S.set.vol*.2;o.connect(g);g.connect(A.destination);o.start();o.stop(A.currentTime+d)}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest('button'))snd(520,.05)});
+function toast(t){const d=document.createElement('div');d.className='ghost';d.style.cssText='left:50%;top:12px;transform:translateX(-50%)';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2500)}
+function resetAll(){window.RST=1;try{localStorage.removeItem('pcf');localStorage.removeItem('pcf_bak')}catch(e){}location.reload()}
+function daily(){S.day=new Date().toDateString();S.money+=100+50*lvl();S.xp+=20;snd(900);draw()}
+const AC=[];[1,5,10,25,50,100].forEach(n=>AC.push(['Собрано ПК: '+n,s=>s.st.built>=n]));[1e3,5e3,1e4,5e4,1e5,1e6].forEach(n=>AC.push(['Заработано '+n+' ₽',s=>s.st.earned>=n]));[2,5,10,25,50].forEach(n=>AC.push(['Уровень '+n,s=>lvl()>=n]));[1,2,3,4,5,6].forEach(n=>AC.push(['Заказов: '+n,s=>s.done.length>=n]));[1,3,5].forEach(n=>AC.push(['Сотрудников: '+n,s=>s.staff>=n]));[2,3,4,5].forEach(n=>AC.push(['Мастерская ур. '+n,s=>s.wl>=n]));[10,50].forEach(n=>AC.push(['Куплено деталей: '+n,s=>s.st.bought>=n]));
+function chk(){if(!S.nick)return;AC.forEach((a,i)=>{if(!S.ach.includes(i)&&a[1](S)){S.ach.push(i);S.money+=100;toast('🏆 '+a[0]+' (+100 ₽)')}})}
+function obv(){ob.n=document.getElementById('nk').value;ob.c=document.getElementById('cn').value}
+function vOnb(){return `<div class='hero'><h1>PC BUILDER TYCOON</h1><p style='color:var(--mu)'>Создайте профиль. Стартовый капитал: ${S.money} ₽</p><div class='row' style='justify-content:center'>${['😎','🤓','🤖','🦊','🐱','👾'].map(a=>`<button class='g ${ob.av==a?'on':''}' onclick="obv();ob.av='${a}';draw()">${a}</button>`).join('')}</div><div class='row' style='justify-content:center'><input id='nk' placeholder='Ник' maxlength='16' value='${ob.n||''}'><input id='cn' placeholder='Название компании' maxlength='24' value='${ob.c||''}'></div><button class='b' onclick='start()'>Начать игру</button></div>`}
+function start(){obv();if(!(ob.n||'').trim()||!(ob.c||'').trim()){alert('Введите ник и название компании');return}S.nick=ob.n.trim();S.co=ob.c.trim();S.av=ob.av;draw()}
+const WN=['Маленькая комната','Небольшой магазин','Профессиональная мастерская','Компьютерный салон','Крупная компания'],WC=[0,1500,6000,20000,80000];
+const tick=()=>S.staff?Math.round(S.staff*(10+4*S.wl)-3*S.wl*S.wl):0;
+function vCo(){return `<div class='row'>${[['w','Мастерская'],['a','Достижения'],['s','Статистика'],['t','Настройки']].map(t=>`<button class='g ${ct==t[0]?'on':''}' onclick="ct='${t[0]}';draw()">${t[1]}</button>`).join('')}</div>`+({w:cW,a:cA,s:cS,t:cT})[ct]()}
+function cW(){const n=WC[S.wl],mx=2*S.wl,hc=400+200*S.staff;return `<div class='card'><b>🏢 ${WN[S.wl-1]} (ур. ${S.wl}/5)</b><small>Аренда: ${3*S.wl*S.wl} ₽ за 20 с (при наличии сотрудников)</small>${S.wl<5?`<button class='b' ${S.money<n?'disabled':''} onclick='upg()'>Улучшить за ${n} ₽</button>`:'<small>Максимальный уровень</small>'}</div><div class='card' style='margin-top:10px'><b>👷 Сборщики: ${S.staff}/${mx}</b><small>Каждый приносит ${10+4*S.wl} ₽ за 20 с. Чистая прибыль: ${tick()} ₽ за 20 с (пока игра открыта)</small><button class='b' ${S.money<hc||S.staff>=mx?'disabled':''} onclick='hire()'>Нанять за ${hc} ₽</button>${S.staff?`<button class='g' onclick='S.staff--;draw()'>Уволить</button>`:''}</div>`}
+function upg(){const n=WC[S.wl];if(S.wl<5&&S.money>=n){S.money-=n;S.wl++;S.xp+=150;snd(900);draw()}}
+function hire(){const c=400+200*S.staff;if(S.money>=c&&S.staff<2*S.wl){S.money-=c;S.staff++;S.xp+=30;snd(900);draw()}}
+function cA(){return `<p>Открыто: ${S.ach.length}/${AC.length}</p><div class='grid'>${AC.map((a,i)=>`<div class='card'><b>${S.ach.includes(i)?'🏆':'🔒'} ${a[0]}</b></div>`).join('')}</div>`}
+function cS(){const s=S.st;return `<div class='card'>${[['Деньги',S.money+' ₽'],['Уровень / опыт',lvl()+' / '+S.xp],['Репутация',S.rep],['Собрано и сдано ПК',s.built],['Всего заработано',s.earned+' ₽'],['Куплено деталей',s.bought],['Лучший FPS',s.bestfps],['Заказов выполнено',S.done.length+'/'+ORD.length]].map(a=>`<div class='stat'><span>${a[0]}</span><b>${a[1]}</b></div>`).join('')}</div>`}
+function cT(){const s=S.set;return `<div class='card'><label>🔊 Звук <input type='checkbox' ${s.snd?'checked':''} onchange='S.set.snd=this.checked?1:0;draw()'></label><label>Громкость <input type='range' min='0' max='1' step='.1' value='${s.vol}' onchange='S.set.vol=+this.value;snd(600)'></label><label>📳 Вибрация <input type='checkbox' ${s.vib?'checked':''} onchange='S.set.vib=this.checked?1:0;draw()'></label><button class='g' onclick="if(confirm('Сбросить весь прогресс?'))resetAll()">Сбросить прогресс</button></div>`}
+setInterval(()=>{if(S.nick&&S.staff){const t=tick();S.money+=t;S.st.earned+=Math.max(0,t);nav();save()}},20000);
+draw();
+</script></body></html>
